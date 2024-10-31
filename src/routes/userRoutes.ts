@@ -67,7 +67,6 @@ router.get('/:id',
 // Edit user (requires admin or higher)
 router.put('/:id',
   authenticateUser,
-  checkRole(2),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
@@ -88,21 +87,26 @@ router.put('/:id',
         return;
       }
 
-      // Security checks
-      // 1. Cannot edit users with higher or equal role
-      if (targetUser[0].roleId! >= req.user!.roleId!) {
-        res.status(403).json({ 
-          message: 'Cannot edit users with equal or higher privileges than yourself' 
-        });
-        return;
-      }
+      // Check if the user is trying to update their own information
+      const isSelfUpdate = req.user!.id === parseInt(id);
 
-      // 2. Cannot set role higher than or equal to own role
-      if (roleId && roleId >= req.user!.roleId!) {
-        res.status(403).json({ 
-          message: 'Cannot assign role equal to or higher than your own' 
-        });
-        return;
+      // Security checks
+      if (!isSelfUpdate) {
+        // 1. Cannot edit users with higher or equal role
+        if (targetUser[0].roleId! >= req.user!.roleId!) {
+          res.status(403).json({ 
+            message: 'Cannot edit users with equal or higher privileges than yourself' 
+          });
+          return;
+        }
+
+        // 2. Cannot set role higher than or equal to own role
+        if (roleId && roleId >= req.user!.roleId!) {
+          res.status(403).json({ 
+            message: 'Cannot assign role equal to or higher than your own' 
+          });
+          return;
+        }
       }
 
       // Prepare update data
@@ -125,8 +129,8 @@ router.put('/:id',
             .where(eq(usersTable.id, parseInt(id)));
         }
 
-        // Update role if provided
-        if (roleId) {
+        // Update role if provided and not a self-update
+        if (roleId && !isSelfUpdate) {
           await tx
             .update(usersRolesTable)
             .set({ roleId })
