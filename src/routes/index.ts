@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import authRoutes from './auth';
+import authRoutes from './authRoutes';
 import userRoutes from './userRoutes';
-import blogRoutes from './blog';
-import authorRoutes from './authors';
-import newsletterRoutes from './newsletters';
+import blogRoutes from './blogRoutes';
+import authorRoutes from './authorsRoutes';
+import newsletterRoutes from './newslettersRoutes';
 import generateContentRoutes from './generateContent';
-import statsRoutes from './stats';
+import statsRoutes from './statsRoutes';
 
 const router = Router();
 
