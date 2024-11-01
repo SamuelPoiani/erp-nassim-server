@@ -6,10 +6,12 @@ import authorRoutes from './authorsRoutes';
 import newsletterRoutes from './newslettersRoutes';
 import generateContentRoutes from './generateContent';
 import statsRoutes from './statsRoutes';
+import rolesRoles from './rolesRoutes';
 
 const router = Router();
 
 router.use('/auth/user', authRoutes);
+router.use('/roles', rolesRoles)
 router.use('/users', userRoutes);
 router.use('/blog', blogRoutes);
 router.use('/blog/author', authorRoutes);
