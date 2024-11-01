@@ -5,8 +5,21 @@ import { authenticateUser, checkRole } from '../middlewares/auth';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 import { generateToken } from '../middlewares/auth';
+import { z } from 'zod';
 
 const router = Router();
+
+const registerSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(6, 'Password must be at least 6 characters long'),
+  roleId: z.number().optional()
+});
+
+const loginSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(1, 'Password is required')
+});
 
 router.get('/', 
   authenticateUser,
@@ -59,13 +72,7 @@ router.post('/register',
   checkRole(2), // Only admins (roleId >= 2) can create new users
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { name, email, password, roleId = 1 } = req.body;
-
-      // Validate required fields
-      if (!name || !email || !password) {
-        res.status(400).json({ message: 'Name, email, and password are required' });
-        return;
-      }
+      const { name, email, password, roleId = 1 } = registerSchema.parse(req.body);
 
       // Check if user already exists
       const existingUser = await db
@@ -124,20 +131,18 @@ router.post('/register',
         user: newUser
       });
     } catch (error) {
-      next(error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors[0].message });
+      } else {
+        next(error);
+      }
     }
   }
 );
 
 router.post('/login', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password } = req.body;
-
-    // Validate required fields
-    if (!email || !password) {
-      res.status(400).json({ message: 'Email and password are required' });
-      return;
-    }
+    const { email, password } = loginSchema.parse(req.body);
 
     // Find user with role
     const user = await db
@@ -181,7 +186,11 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction): P
       token,
     });
   } catch (error) {
-    next(error);
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ message: error.errors[0].message });
+    } else {
+      next(error);
+    }
   }
 });
 
