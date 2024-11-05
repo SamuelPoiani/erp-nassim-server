@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '../db';
 import { newslettersTable } from '../db/schema';
 import { authenticateUser, checkRole } from '../middlewares/auth';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
 
@@ -35,6 +36,34 @@ router.get('/',
       res.json(newsletters);
     } catch (error) {
       next(error);
+    }
+  }
+);
+
+router.delete('/delete/:email',
+  authenticateUser,
+  checkRole(2),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email } = req.params;
+      
+      const result = await db
+        .delete(newslettersTable)
+        .where(eq(newslettersTable.email, email))
+        .returning();
+
+      if (!result.length) {
+        res.status(404).json({ message: 'Email not found in newsletter list' });
+        return;
+      }
+
+      res.json({ message: 'Successfully unsubscribed from newsletter' });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: error.errors[0].message });
+      } else {
+        next(error);
+      }
     }
   }
 );
