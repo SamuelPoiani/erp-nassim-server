@@ -40,12 +40,12 @@ router.get('/',
   }
 );
 
-router.delete('/delete/:email',
+router.delete('/unsubscribe',
   authenticateUser,
   checkRole(2),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { email } = req.params;
+      const { email } = req.body;
       
       const result = await db
         .delete(newslettersTable)
