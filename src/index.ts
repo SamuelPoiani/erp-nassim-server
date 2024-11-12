@@ -10,7 +10,7 @@ const app: Express = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: ['http://localhost:3000', 'https://dashboard.samuelp.dev'],
   credentials: true
 }));
 
